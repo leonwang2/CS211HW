@@ -3,54 +3,58 @@ import java.util.*;
 
 //Author: Leon Wang
 //It is ok to share my code anonymously for educational purposes
-public class brexitnegotiations{
-    public static class Topic{
-        public int length;
-        public int[] dependencies;
-    }
-
-    public static Topic[] topics;
-    public static BitSet done;
-
-    public static int countDependencies(int current){
-        if(done.get(current)) return 0;
-        done.set(current);
-        int total = 1;
-        for(int i = 0;i < topics[current].dependencies.length;i++){
-            int dependency = topics[current].dependencies[i];
-            total += countDependencies(dependency);
-        }
-        return total;
-    }
-
+public class favourable{
     public static void main(String[] args) throws IOException{
         FastReader in = new FastReader();
         PrintWriter out = new PrintWriter(System.out);
 
-        int n = in.nextInt();
+        int tests = in.nextInt();
+        for(int t = 0;t < tests;t++){
+            int s = in.nextInt();
+            int[][] paths = new int[400][3];
+            int[] inDegree = new int[400];
+            BitSet favourable = new BitSet();
+            for(int i = 0;i < 400;i++) Arrays.fill(paths[i], -1);
 
-        topics = new Topic[n];
-        for(int i = 0;i < n;i++){
-            topics[i] = new Topic();
-            topics[i].length = in.nextInt();
-            int count = in.nextInt();
-            topics[i].dependencies = new int[count];
-            for(int j = 0;j < count;j++) topics[i].dependencies[j] = in.nextInt() - 1;
+            for(int i = 0;i < s;i++){
+                int page = in.nextInt() - 1;
+                String next = in.next();
+                if(next.charAt(0) == 'f') favourable.set(page);
+                else if(next.charAt(0) != 'c'){
+                    paths[page][0] = Integer.parseInt(next) - 1;
+                    paths[page][1] = in.nextInt() - 1;
+                    paths[page][2] = in.nextInt() - 1;
+                    for(int j = 0;j < 3;j++) inDegree[paths[page][j]]++;
+                }
+            }
+
+            ArrayList<Integer> topSort = new ArrayList<>();
+            topSort.add(0);
+            for(int i = 0;i < topSort.size();i++){
+                for(int j = 0;j < 3;j++){
+                    int next = paths[topSort.get(i)][j];
+                    if(next >= 0){
+                        inDegree[next]--;
+                        if(inDegree[next] == 0) topSort.add(next);
+                    }
+                }
+            }
+
+            long[] ways = new long[400];
+            ways[0] = 1;
+            for(int i = 0;i < topSort.size();i++){
+                int node = topSort.get(i);
+                for(int j = 0;j < 3;j++){
+                    if(paths[node][j] >= 0) ways[paths[node][j]] += ways[node];
+                }
+            }
+
+
+            long total = 0;
+            for(int i = 0;i < 400;i++) if(favourable.get(i)) total += ways[i];
+            out.println(total);
         }
 
-        Integer[] sorted = new Integer[n];
-        for(int i = 0;i < n;i++) sorted[i] = i;
-        Arrays.sort(sorted, Comparator.comparingInt(i -> -topics[i].length));
-        done = new BitSet(n);
-
-        int max = 0;
-        int index = 0;
-        for(int i = 0;i < n;i++){
-            if(done.get(sorted[i])) continue;
-            index += countDependencies(sorted[i]);
-            max = Math.max(max, index + topics[sorted[i]].length - 1);
-        }
-        out.println(max);
         in.close();
         out.close();
     }

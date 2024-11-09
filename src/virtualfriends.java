@@ -3,54 +3,51 @@ import java.util.*;
 
 //Author: Leon Wang
 //It is ok to share my code anonymously for educational purposes
-public class brexitnegotiations{
-    public static class Topic{
-        public int length;
-        public int[] dependencies;
+public class virtualfriends{
+    public static int[] parents;
+    public static HashMap<String, Integer> index;
+
+    public static int add(int from, int to){
+        int size = -parents[from];
+        parents[from] = to;
+        parents[to] -= size;
+        return -parents[to];
     }
 
-    public static Topic[] topics;
-    public static BitSet done;
+    public static int join(int val1, int val2){
+        int a = find(val1), b = find(val2);
+        if(a == b) return -parents[a];
+        if(-parents[a] < -parents[b]) return add(a, b);
+        else return add(b, a);
+    }
 
-    public static int countDependencies(int current){
-        if(done.get(current)) return 0;
-        done.set(current);
-        int total = 1;
-        for(int i = 0;i < topics[current].dependencies.length;i++){
-            int dependency = topics[current].dependencies[i];
-            total += countDependencies(dependency);
-        }
-        return total;
+    public static int find(int current){
+        if(parents[current] < 0) return current;
+        parents[current] = find(parents[current]);
+        return parents[current];
+    }
+
+    public static int name(String name){
+        if(index.containsKey(name)) return index.get(name);
+        index.put(name, index.size());
+        return index.size() - 1;
     }
 
     public static void main(String[] args) throws IOException{
         FastReader in = new FastReader();
         PrintWriter out = new PrintWriter(System.out);
-
-        int n = in.nextInt();
-
-        topics = new Topic[n];
-        for(int i = 0;i < n;i++){
-            topics[i] = new Topic();
-            topics[i].length = in.nextInt();
-            int count = in.nextInt();
-            topics[i].dependencies = new int[count];
-            for(int j = 0;j < count;j++) topics[i].dependencies[j] = in.nextInt() - 1;
+        int tests = in.nextInt();
+        parents = new int[100000 * 2];
+        index = new HashMap<>(100000 * 2);
+        for(int t = 0;t < tests;t++){
+            int n = in.nextInt();
+            Arrays.fill(parents, -1);
+            index.clear();
+            for(int i = 0;i < n;i++){
+                String a = in.next(), b = in.next();
+                out.println(join(name(a), name(b)));
+            }
         }
-
-        Integer[] sorted = new Integer[n];
-        for(int i = 0;i < n;i++) sorted[i] = i;
-        Arrays.sort(sorted, Comparator.comparingInt(i -> -topics[i].length));
-        done = new BitSet(n);
-
-        int max = 0;
-        int index = 0;
-        for(int i = 0;i < n;i++){
-            if(done.get(sorted[i])) continue;
-            index += countDependencies(sorted[i]);
-            max = Math.max(max, index + topics[sorted[i]].length - 1);
-        }
-        out.println(max);
         in.close();
         out.close();
     }

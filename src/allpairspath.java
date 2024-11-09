@@ -3,57 +3,135 @@ import java.util.*;
 
 //Author: Leon Wang
 //It is ok to share my code anonymously for educational purposes
-public class brexitnegotiations{
-    public static class Topic{
-        public int length;
-        public int[] dependencies;
-    }
-
-    public static Topic[] topics;
-    public static BitSet done;
-
-    public static int countDependencies(int current){
-        if(done.get(current)) return 0;
-        done.set(current);
-        int total = 1;
-        for(int i = 0;i < topics[current].dependencies.length;i++){
-            int dependency = topics[current].dependencies[i];
-            total += countDependencies(dependency);
-        }
-        return total;
-    }
-
+//GenAI Chat Link: https://chatgpt.com/share/67243377-e708-8001-a16f-59155467baf8 (I had it help fix my code)
+public class allpairspath{
     public static void main(String[] args) throws IOException{
+        int inf = Integer.MAX_VALUE / 2;
+
         FastReader in = new FastReader();
         PrintWriter out = new PrintWriter(System.out);
 
-        int n = in.nextInt();
+        while(true){
+            int n = in.nextInt(), m = in.nextInt(), q = in.nextInt();
+            if(n == 0 && m == 0 && q == 0) break;
 
-        topics = new Topic[n];
-        for(int i = 0;i < n;i++){
-            topics[i] = new Topic();
-            topics[i].length = in.nextInt();
-            int count = in.nextInt();
-            topics[i].dependencies = new int[count];
-            for(int j = 0;j < count;j++) topics[i].dependencies[j] = in.nextInt() - 1;
+            int[][] dp = new int[n][n];
+            for(int i = 0;i < n;i++){
+                Arrays.fill(dp[i], inf);
+                dp[i][i] = 0;
+            }
+            for(int i = 0;i < m;i++){
+                int a = in.nextInt(), b = in.nextInt();
+                dp[a][b] = Math.min(dp[a][b], in.nextInt());
+            }
+
+            for(int k = 0;k < n;k++){
+                for(int i = 0;i < n;i++){
+                    for(int j = 0;j < n;j++){
+                        if(dp[i][k] < inf && dp[k][j] < inf) dp[i][j] = Math.min(dp[i][j], dp[i][k] + dp[k][j]);
+                    }
+                }
+            }
+
+            //It seems like I messed up my negative cycle detection
+            for(int k = 0;k < n;k++){
+                if(dp[k][k] < 0){
+                    for(int i = 0;i < n;i++){
+                        for(int j = 0;j < n;j++){
+                            if(dp[i][k] < inf && dp[k][j] < inf){
+                                dp[i][j] = -inf;  // Mark as part of negative cycle path
+                            }
+                        }
+                    }
+                }
+            }
+
+            for(int i = 0;i < q;i++){
+                int a = in.nextInt(), b = in.nextInt();
+                if(dp[a][b] >= inf) out.println("Impossible");
+                else if(dp[a][b] == -inf) out.println("-Infinity");
+                else out.println(dp[a][b]);
+            }
+            out.println();
         }
 
-        Integer[] sorted = new Integer[n];
-        for(int i = 0;i < n;i++) sorted[i] = i;
-        Arrays.sort(sorted, Comparator.comparingInt(i -> -topics[i].length));
-        done = new BitSet(n);
-
-        int max = 0;
-        int index = 0;
-        for(int i = 0;i < n;i++){
-            if(done.get(sorted[i])) continue;
-            index += countDependencies(sorted[i]);
-            max = Math.max(max, index + topics[sorted[i]].length - 1);
-        }
-        out.println(max);
         in.close();
         out.close();
     }
+
+
+    //Below is what GenAI wrote (I only had it generate an answer as a last resort)
+
+//    static final int INF = Integer.MAX_VALUE / 2; // Avoid overflow in addition
+//
+//    public static void main(String[] args) throws IOException{
+//        FastReader scanner = new FastReader();
+//        StringBuilder output = new StringBuilder();
+//
+//        while(true){
+//            // Read n, m, q
+//            int n = scanner.nextInt();
+//            int m = scanner.nextInt();
+//            int q = scanner.nextInt();
+//            if(n == 0 && m == 0 && q == 0) break;
+//
+//            // Initialize distance matrix
+//            int[][] dist = new int[n][n];
+//            for(int i = 0;i < n;i++){
+//                Arrays.fill(dist[i], INF);
+//                dist[i][i] = 0;
+//            }
+//
+//            // Read edges
+//            for(int i = 0;i < m;i++){
+//                int u = scanner.nextInt();
+//                int v = scanner.nextInt();
+//                int w = scanner.nextInt();
+//                dist[u][v] = Math.min(dist[u][v], w);
+//            }
+//
+//            // Run Floyd-Warshall algorithm
+//            for(int k = 0;k < n;k++){
+//                for(int i = 0;i < n;i++){
+//                    for(int j = 0;j < n;j++){
+//                        if(dist[i][k] < INF && dist[k][j] < INF){
+//                            dist[i][j] = Math.min(dist[i][j], dist[i][k] + dist[k][j]);
+//                        }
+//                    }
+//                }
+//            }
+//
+//            // Detect nodes affected by negative cycles
+//            for(int k = 0;k < n;k++){
+//                if(dist[k][k] < 0){  // Negative cycle found
+//                    for(int i = 0;i < n;i++){
+//                        for(int j = 0;j < n;j++){
+//                            if(dist[i][k] < INF && dist[k][j] < INF){
+//                                dist[i][j] = -INF;  // Mark as part of negative cycle path
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+//
+//            // Process queries
+//            for(int i = 0;i < q;i++){
+//                int u = scanner.nextInt();
+//                int v = scanner.nextInt();
+//                if(dist[u][v] == INF){
+//                    output.append("Impossible\n");
+//                }else if(dist[u][v] == -INF){
+//                    output.append("-Infinity\n");
+//                }else{
+//                    output.append(dist[u][v]).append("\n");
+//                }
+//            }
+//            output.append("\n");  // Blank line after each test case
+//        }
+//
+//        System.out.print(output);
+//    }
+
 
     /* FastReader code from Method 4 in the post https://www.geeksforgeeks.org/fast-io-in-java-in-competitive-programming/
        Modified nextLine() to allow arbitrary long lines,
@@ -189,14 +267,12 @@ public class brexitnegotiations{
         public double nextDouble() throws IOException{
             double ret = 0, div = 1;
             byte c = read();
-            while(c <= ' ')
-                c = read();
+            while(c <= ' ') c = read();
             boolean neg = (c == '-');
             if(neg) c = read();
             do{
                 ret = ret * 10 + c - '0';
-            }
-            while((c = read()) >= '0' && c <= '9');
+            }while((c = read()) >= '0' && c <= '9');
             if(c == '.'){
                 while((c = read()) >= '0' && c <= '9'){
                     ret += (c - '0') / (div *= 10);

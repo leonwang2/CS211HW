@@ -3,22 +3,34 @@ import java.util.*;
 
 //Author: Leon Wang
 //It is ok to share my code anonymously for educational purposes
-public class brexitnegotiations{
-    public static class Topic{
-        public int length;
-        public int[] dependencies;
-    }
+public class landline{
+    public static ArrayList<Integer> list;
+    public static HashMap<Integer, ArrayList<int[]>> get;
+    public static BitSet remaining;
 
-    public static Topic[] topics;
-    public static BitSet done;
+    public static int primms(int left, boolean addList){
+        int total = 0;
 
-    public static int countDependencies(int current){
-        if(done.get(current)) return 0;
-        done.set(current);
-        int total = 1;
-        for(int i = 0;i < topics[current].dependencies.length;i++){
-            int dependency = topics[current].dependencies[i];
-            total += countDependencies(dependency);
+        while(left > 0){
+            int min = Integer.MAX_VALUE;
+            int minVal = -1;
+            for(int val : list){
+                if(get.get(val) == null) continue;
+                for(int[] edge : get.get(val)){
+                    int other = val == edge[0] ? edge[1] : edge[0];
+                    if(remaining.get(other) && min > edge[2]){
+                        min = edge[2];
+                        minVal = other;
+                    }
+                }
+            }
+
+            if(minVal != -1){
+                total += min;
+                if(addList) list.add(minVal);
+                remaining.clear(minVal);
+                left--;
+            }else return -1;
         }
         return total;
     }
@@ -27,30 +39,57 @@ public class brexitnegotiations{
         FastReader in = new FastReader();
         PrintWriter out = new PrintWriter(System.out);
 
-        int n = in.nextInt();
+        int n = in.nextInt(), m = in.nextInt(), p = in.nextInt();
+        BitSet insecure = new BitSet(n);
+        for(int i = 0;i < p;i++) insecure.set(in.nextInt() - 1);
 
-        topics = new Topic[n];
-        for(int i = 0;i < n;i++){
-            topics[i] = new Topic();
-            topics[i].length = in.nextInt();
-            int count = in.nextInt();
-            topics[i].dependencies = new int[count];
-            for(int j = 0;j < count;j++) topics[i].dependencies[j] = in.nextInt() - 1;
+        get = new HashMap<>();
+        int[][] edges = new int[m][3];
+        for(int i = 0;i < m;i++){
+            edges[i][0] = in.nextInt() - 1;
+            edges[i][1] = in.nextInt() - 1;
+            edges[i][2] = in.nextInt();
+
+            if(!get.containsKey(edges[i][0])) get.put(edges[i][0], new ArrayList<>());
+            get.get(edges[i][0]).add(edges[i]);
+
+            if(!get.containsKey(edges[i][1])) get.put(edges[i][1], new ArrayList<>());
+            get.get(edges[i][1]).add(edges[i]);
         }
 
-        Integer[] sorted = new Integer[n];
-        for(int i = 0;i < n;i++) sorted[i] = i;
-        Arrays.sort(sorted, Comparator.comparingInt(i -> -topics[i].length));
-        done = new BitSet(n);
-
-        int max = 0;
-        int index = 0;
+        int start = -1, left = 0;
+        remaining = new BitSet(n);
         for(int i = 0;i < n;i++){
-            if(done.get(sorted[i])) continue;
-            index += countDependencies(sorted[i]);
-            max = Math.max(max, index + topics[sorted[i]].length - 1);
+            if(!insecure.get(i)){
+                if(start == -1) start = i;
+                else{
+                    remaining.set(i);
+                    left++;
+                }
+            }
         }
-        out.println(max);
+
+
+        list = new ArrayList<>();
+        list.add(start);
+        int total = primms(left, true);
+
+        if(total < 0) out.println("impossible");
+        else{
+            left = 0;
+            for(int i = 0;i < n;i++){
+                if(insecure.get(i)){
+                    remaining.set(i);
+                    left++;
+                }
+            }
+
+            int val = primms(left, false);
+
+            if(val < 0) out.println("impossible");
+            else out.println(total + val);
+        }
+
         in.close();
         out.close();
     }
